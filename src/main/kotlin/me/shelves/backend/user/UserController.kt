@@ -44,7 +44,7 @@ class UserController (@Autowired var userRepository: UserRepository,
     @ApiOperation("Change user password")
     fun changePassword(@Valid @RequestBody passwordDto: PasswordDto): ResponseEntity<Any> {
         val auth: Authentication = SecurityContextHolder.getContext().authentication
-        val authUser: User? = userRepository.findByEmail(auth.name) ?: return ResponseEntity.notFound().build()
+        val authUser: User? = userRepository.findByEmail(auth.name)
 
         if(passwordDto.newPassword.length <= 8) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("New password is too short.");
@@ -71,7 +71,7 @@ class UserController (@Autowired var userRepository: UserRepository,
     @ApiOperation(value = "Add new User to the DB")
     fun add(@Valid @RequestBody userDto: CreateUserDto): ResponseEntity<String> {
         return try {
-            val user = this.userService.addUser(userDto.toUser())
+            this.userService.addUser(userDto.toUser())
             ResponseEntity<String>("User created successful ", HttpStatus.CREATED)
         } catch (ex: Exception) {
             log.info("Can't create User: " + ex.message)
