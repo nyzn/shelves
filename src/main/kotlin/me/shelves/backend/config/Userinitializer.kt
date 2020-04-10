@@ -1,6 +1,7 @@
 package me.shelves.backend.config
 
 import me.shelves.backend.user.User
+import me.shelves.backend.user.UserRepository
 import me.shelves.backend.user.UserService
 import me.shelves.backend.user.model.RoleType
 import me.shelves.backend.user.model.Salutation
@@ -13,14 +14,14 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 
 @Component
-class Userinitliazer: ApplicationListener<ContextRefreshedEvent> {
+class Userinitializer: ApplicationListener<ContextRefreshedEvent> {
     companion object : Log() {}
 
     @Value("\${init}")
     var init: Boolean = false
 
     @Autowired
-    lateinit var userService: UserService
+    lateinit var userRepository: UserRepository
 
     @Autowired
     lateinit var passwordEncoder: PasswordEncoder
@@ -31,14 +32,16 @@ class Userinitliazer: ApplicationListener<ContextRefreshedEvent> {
             var roleType = enumValues<RoleType>()
             var salute = arrayOf(Salutation.HERR, Salutation.FRAU, Salutation.UNBEKANNT, Salutation.HERR)
             log.info("--------- Running User Initializer ---------")
+            log.info("--------- Running User Initializer ---------")
             for ((key,value) in users) {
-                if(!userService.existByEmail("$value@fake.de")) {
+                if(!userRepository.existsByEmail("$value@fake.de")) {
                     //userService.deleteUser(userService.getByEmail("$value@fake.de"))
                     val newUser = User("$value@fake.de", "First name $value",
                             "Last name $value", passwordEncoder.encode("password123"), salute[key])
                     newUser.enable = true
+                    newUser.locked = false
                     newUser.roleType = roleType[key]
-                    userService.addUser(newUser)
+                    userRepository.save(newUser)
                 }
             }
             log.info("--------- Finished User Initializer ---------")

@@ -15,8 +15,6 @@ class ShelvesBasicAuthenticationEntryPoint: BasicAuthenticationEntryPoint() {
     override fun commence(request: HttpServletRequest?, response: HttpServletResponse?,
                           authException: AuthenticationException?) {
         if (authException is LockedException) {
-            //Integer minutesRemaining=this.userService.getRemainingLockedMinutesForCurrent();
-            //response.addHeader("Locktime", minutesRemaining.toString());
             response!!.sendError(HttpStatus.LOCKED.value(), authException.localizedMessage)
         } else if (authException is DisabledException) {
             response!!.sendError(HttpStatus.LOCKED.value(), authException.message)
@@ -24,7 +22,7 @@ class ShelvesBasicAuthenticationEntryPoint: BasicAuthenticationEntryPoint() {
             val requestURL = request!!.requestURL
             if (requestURL?.toString() != null) {
                 val url = requestURL.toString()
-                if (url.endsWith("/swagger-ui.html")) {
+                if (url.endsWith("/swagger-ui.html" )|| url.endsWith("/h2")) {
                     super.commence(request, response, authException)
                 } else {
                     response!!.sendError(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.reasonPhrase)
@@ -40,3 +38,4 @@ class ShelvesBasicAuthenticationEntryPoint: BasicAuthenticationEntryPoint() {
         super.afterPropertiesSet()
     }
 }
+

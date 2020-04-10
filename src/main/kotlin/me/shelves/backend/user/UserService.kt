@@ -14,24 +14,8 @@ class UserService {
     @Autowired
     lateinit var passwordEncoder: PasswordEncoder
 
-    fun getByUuid(uuid: String): User {
-        return userRepository.findByUuid(uuid)
-    }
-
-    fun getByEmail(email: String): User {
-        return userRepository.findByEmail(email)
-    }
-
-    fun deleteUser(user: User)  {
-        userRepository.delete(user)
-    }
-
-    fun existByEmail(email: String): Boolean{
-        return userRepository.existsByEmail(email)
-    }
-
     fun addUser(user: User) : User {
-        if(existByEmail(user.email)){
+        if(userRepository.existsByEmail(user.email)){
             throw UserAlreadyExistException("User Already exist in the DB")
         } else{
             return userRepository.save(user)
@@ -46,7 +30,7 @@ class UserService {
         return userRepository.save(dbUser)
     }
 
-    fun getCurrent(): User? {
+    fun getLoggedInUser(): User? {
         return if(SecurityContextHolder.getContext() != null && SecurityContextHolder.getContext().authentication != null)
             userRepository.findByEmail(SecurityContextHolder.getContext().authentication.name)
         else {

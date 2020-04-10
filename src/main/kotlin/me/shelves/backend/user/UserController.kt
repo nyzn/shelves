@@ -7,6 +7,7 @@ import me.shelves.backend.BaseController
 import me.shelves.backend.user.dto.CreateUserDto
 import me.shelves.backend.user.dto.PasswordDto
 import me.shelves.backend.user.dto.UserDto
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
@@ -20,7 +21,8 @@ import javax.validation.constraints.NotNull
 
 @RestController
 @RequestMapping("/api/user")
-class UserController (val userService: UserService) : BaseController<User>(){
+class UserController (@Autowired var userRepository: UserRepository,
+                        @Autowired var userService: UserService) : BaseController<User>(){
 
     @DeleteMapping("/delete/{uuid}")
     @ApiResponses(
@@ -31,12 +33,10 @@ class UserController (val userService: UserService) : BaseController<User>(){
     )
     @ApiOperation(value = "Lösche User anhand seiner Uuid")
     fun delete(@PathVariable uuid: String): ResponseEntity<String> {
-        val userFromDB = userService.getByUuid(uuid)
-        return if(userFromDB != null){
-            userService.deleteUser(userFromDB)
+        val userFromDB = userRepository.findByUuid(uuid)
+        return run {
+            userRepository.delete(userFromDB)
             ResponseEntity.ok().build()
-        } else {
-            ResponseEntity.notFound().build()
         }
     }
 
@@ -44,7 +44,7 @@ class UserController (val userService: UserService) : BaseController<User>(){
     @ApiOperation("Change user password")
     fun changePassword(@Valid @RequestBody passwordDto: PasswordDto): ResponseEntity<Any> {
         val auth: Authentication = SecurityContextHolder.getContext().authentication
-        val authUser: User? = userService.getByEmail(auth.name) ?: return ResponseEntity.notFound().build()
+        val authUser: User? = userRepository.findByEmail(auth.name) ?: return ResponseEntity.notFound().build()
 
         if(passwordDto.newPassword.length <= 8) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("New password is too short.");
@@ -82,7 +82,7 @@ class UserController (val userService: UserService) : BaseController<User>(){
     @PutMapping("/update")
     @ApiOperation("update user data with specific uuid")
     fun update(@RequestBody user: UserDto): ResponseEntity<String> {
-        val userFromDb : User? = userService.getByUuid(user.uuid)
+        val userFromDb : User? = userRepository.findByUuid(user.uuid)
         return if(userFromDb != null) {
             userService.updateUser(userFromDb, user.toUser())
             ResponseEntity<String>("Update $user successful ", HttpStatus.OK)
@@ -91,18 +91,18 @@ class UserController (val userService: UserService) : BaseController<User>(){
         }
     }
 
-    @GetMapping("/current")
-    @ApiOperation("Get current User")
+    @GetMapping("/loggedInUser")
+    @ApiOperation("Get logged in User")
     @ResponseBody
     fun getCurrent() : UserDto? {
-        return userService.getCurrent()?.toUserDto()
+        return userService.getLoggedInUser()?.toUserDto()
     }
 
     @GetMapping("/all",params = [ "page", "size" ])
     @ApiOperation("get All User")
     fun getAll(@RequestParam("page") page: Int, @RequestParam("size") size: Int)
             : ResponseEntity<Page<User>> {
-        val pageUser: Page<User> = userService.userRepository.findAll(PageRequest.of(page,size))
+        val pageUser: Page<User> = userRepository.findAll(PageRequest.of(page,size))
 
         return ResponseEntity(pageUser, HttpStatus.OK)
     }
